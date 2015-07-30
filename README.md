@@ -1,5 +1,7 @@
 # Pysellus DSL
 
+You can some complete examples at the [dsl example file](dsl-examples.md)
+
 ### Stream
 
 `Stream :: String -> Maybe[Dictionary] -> Stream[Any]`
