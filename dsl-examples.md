@@ -6,7 +6,7 @@ import helpers
 @failure >> terminal
 def to_be_objective(tweet):
     subjectivity = helpers.get_subjectiviy_from_spanish(tweet['text'])
-    return subjectivity > 0.4
+    return subjectivity < 0.4
 
 @failure >> terminal
 def not_about_traffic(tweet):
