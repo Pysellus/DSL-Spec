@@ -4,35 +4,16 @@ You can some complete examples at the [dsl example file](dsl-examples.md)
 
 ### Stream
 
-`Stream :: String -> Maybe[Dictionary] -> Stream[Any]`
+`stream :: String -> Stream[Any]`
 
 ```python
 # Basic Usage
-events = Stream("http://api.smartvel.net/v1/events")
-
-# Query parameters or headers (w/ dictionary)
-options = {
-    "headers": {
-        "X-Header": "value"
-    },
-    "user_agent": "User-Agent-String",
-    "basic_auth": ["user", "pass"],
-    "query_params": {
-        "regions": "Madrid",
-        "languages": ["es", "en"]
-    }
-}
-
-events = Stream("http://api.smartvel.net/v1/events", options)
+events = stream('smartvel')
 ```
 
 ### Filter
 
 `Filter :: (Any -> Boolean) -> Stream[Any]`
-
-Or maybe,
-
-`Filter :: (Any -> Boolean) -> Stream[Any] -> Stream[Any]`
 
 ```python
 # Filter w/ a simple lambda
@@ -43,27 +24,12 @@ football = events.filter(lambda x: x.attribute == value)
 def filter_rugby(element):
     return element.taxonomy__name == "rugby"
 
-# filter can be either a method or a static function
-
-# as a method, we can chain filter such as 
+# we can chain filter such as
 # rugby = events.filter(foo).filter(bar).filter(...)
 rugby = events.filter(filter_rugby)
 
-# as a static function, we can apply the same filter to multiple streams such as:
-# rugby = Stream.filter(filter_rugby, events, another_stream, ...)
-# rugby = Stream.filter(filter_rugby, events)
-
 # You can merge different streams
-sports = Stream.merge(football, rugby)
 sports = football.merge(rugby)
-
-# You can create a filter by combining two or more filters
-# TODO: Obviously, come up with a better name
-sports_filter = MagicHelperClass.and(filter_football, filter_rugby, ...)
-# this works too
-sports_filter = filter_football
-                .and(filter_rugby)
-                .and(...)
 ```
 
 ### Test Declaration
@@ -83,7 +49,7 @@ def region_is_capital(event):
 
 # You can pass the integration endpoint to the test as a docstring
 
-# TODO: Maybe we can pass more integration names two bind the test to all of them
+# We can pass more integration names two bind the test to all of them
 @on_failure('slack/issues', 'gmail')
 def has_rating(event):
     return event.rating != None;
@@ -93,44 +59,7 @@ def has_taxonomies(event):
     return len(event.taxonomies) > 0
 ```
 
-The `@on_failure` decorator could be implemented as follows:
-
-```python
-# this...
-@on_failure('integration1', 'integration2', ...)
-def test_function(element):
-    # test body
-
-# ... becomes this
-def on_failure(*integrations):
-    def inner_decorator(tester):
-        # TODO: Is the functools line really necessary?
-        
-        @functools.wrap(tester)
-        def tester_decorator(item):
-            try:
-                result = tester(item)
-                if not result:
-                    for integration in integrations:
-                        integrations[integration].notify_failure(item)
-                return result
-            except:
-                # notify integration of exception
-                # plus some metadata to make that explicit
-                return False
-            
-        return tester_decorator
-    return inner_decorator
-    
-# notice that the ‘integrations’ hash comes from 
-# an outer closure, defined in the core of the service
-
-# Pleaso note that the given test body is enclosed in a try-except block
-# any exception inside your test code will be handled
-# as a test error to be notified to the assigned integration
-# some extra metadata is provided to note that the error came from an exception
-# and not from some test failure
-```
+You can see the implementation for `@on_failure` on the [main repo](https://github.com/Pysellus/pysellus/blob/49f1fd529a3ed1dd49d689f7f948fb523ab4f0db/pysellus/integrations.py#L10)
 
 ### Test Execution
 
@@ -161,7 +90,7 @@ def test_description():
 Here is a practical use case of the previous notation:
 
 ```python
-events = streamify('http://api.smartvel.net/v1/events')
+events = stream('smartvel')
 
 @check 'all events in Madrid have at least a two star rating':
 
@@ -169,29 +98,17 @@ events = streamify('http://api.smartvel.net/v1/events')
     # that we want to test
     all_events_in_madrid = events.filter(event_in_madrid)
 
-    # `expect` might be changed to a more descriptive name in the future
+    # then, we expect that all elements in the test satisfy the given test
     expect(all_events_in_madrid)(has_at_least_two_stars)
 ```
 
-Where `expect` could be implemented as:
+You can see the implementation for `expect` on the [main repo](https://github.com/Pysellus/pysellus/blob/49f1fd529a3ed1dd49d689f7f948fb523ab4f0db/pysellus/registrar.py#L14)
+
+
+This example would get expanded into the following:
 
 ```python
-# We should cache all streams passed to expect
-# or else they might be garbage-collected when the setup function ends
-def expect(a_stream):
-    def tester_registrator(*testers):
-        observed_streams.append(a_stream)
-        
-        for tester in testers:
-            a_stream.be_verified_by(tester)
-
-    return tester_registrator
-```
-
-This would get expanded into the following:
-
-```python
-events = streamify('http://api.smartvel.net/v1/events')
+events = stream('smartvel')
 
 # we could also decorate this function (the 'setup' function)
 # if it’s useful for something (registering the test name)
@@ -205,12 +122,6 @@ def all_events_in_Madrid_have_at_least_a_two_star_rating():
     # Then it will notify the integration
     # associated with that test
     expect(all_events_in_madrid)(has_at_least_two_stars)
-
-
-# automatically append the function call?
-# all these unit functions get executed ONCE 
-# at the beginning of the system
-# all_events_in_Madrid_have_at_least_a_two_star_rating()
 ```
 
 ### Integrations
