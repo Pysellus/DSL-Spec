@@ -7,7 +7,7 @@ You can some complete examples at the [dsl example file](dsl-examples.md)
 `stream :: String -> Stream[Any]`
 
 ```python
-# Basic Usage
+# Usage:
 events = stream('smartvel')
 ```
 
@@ -16,7 +16,7 @@ events = stream('smartvel')
 `Filter :: (Any -> Boolean) -> Stream[Any]`
 
 ```python
-# Filter w/ a simple lambda
+# Filter with a simple lambda
 football = events.filter(lambda x: x.attribute == value)
 
 # Or use any function with signature
@@ -25,8 +25,7 @@ def filter_rugby(element):
     return element.taxonomy__name == "rugby"
 
 # we can chain filter such as
-# rugby = events.filter(foo).filter(bar).filter(...)
-rugby = events.filter(filter_rugby)
+rugby = events.filter(filter_rugby).filter(foo).filter(...)
 
 # You can merge different streams
 sports = football.merge(rugby)
@@ -80,11 +79,6 @@ So this...
 
 def test_description():
     # valid Python test code
-
-# some alternative notations for the test header could be:
-# 'test description':
-# > 'test description':
-# @ 'test description':
 ```
 
 Here is a practical use case of the previous notation:
@@ -101,9 +95,6 @@ events = stream('smartvel')
     # then, we expect that all elements in the test satisfy the given test
     expect(all_events_in_madrid)(has_at_least_two_stars)
 ```
-
-You can see the implementation for `expect` on the [main repo](https://github.com/Pysellus/pysellus/blob/49f1fd529a3ed1dd49d689f7f948fb523ab4f0db/pysellus/registrar.py#L14)
-
 
 This example would get expanded into the following:
 
@@ -124,26 +115,37 @@ def all_events_in_Madrid_have_at_least_a_two_star_rating():
     expect(all_events_in_madrid)(has_at_least_two_stars)
 ```
 
+You can see the implementation for `expect` on the [main repo](https://github.com/Pysellus/pysellus/blob/49f1fd529a3ed1dd49d689f7f948fb523ab4f0db/pysellus/registrar.py#L14)
+
+
 ### Integrations
 
-There are two main viewpoints here:
+Pysellus defines an 'integrator protocol' via the [`AbstractIntegration` class](https://github.com/Pysellus/pysellus/blob/49f1fd529a3ed1dd49d689f7f948fb523ab4f0db/pysellus/interfaces.py#L6), that all built-in and custom integrations must implement.
 
-1. Have a 'global integrator’ service, controlled by the user of `pysellus`, who exposes endpoints for each one of the desired integrations, and merely receives the payload (object which failed the test, test name, etc.) and is in charge of formatting and notifying the actual service integration.
+Some integrations will require some sort of parameters, or API keys that you won't want to put under version control. To this end, when created, this integrations will try to read this parameters from an specific configuration file, `.ps_integrations.yml`. This file should be placed on the same repository of the test files that pysellus will load.
 
-	We put our integration list on `integrations.yml`
+The configuration file has the following format:
 
-	```yaml
-	slack:
-	    # Developer documentation purposes only
-	    name: h4ckademy
-	    # Url should have a web hook configured
-	    url: global-integrator.com/slackWebHook
-	email:
-	    name: gmail
-	    url: global-integrator.com/emailWebHook
-	...
-	```
+```yaml
+# integration declarations
+notify:
+    # all integrations foll
+    'user alias':
+        integration_type:
+            some_parameter: 'some value',
+            another_parameter: 'another value'
 
-2. `pysellus` assumes the responsibility of performing the integrations by defining an ‘integrator protocol’ which must be implemented by all classes, each representing a service.
+# custom integrations definitions
+custom_integrations:
+    custom_integration_type: 'integration class path'
+```
 
+A specific example of a configuration file could be:
 
+```yaml
+notify:
+    'developers_channel':
+        slack:
+            url: 'https://slack.post.url'
+            channel: '#devops'
+```
