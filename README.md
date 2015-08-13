@@ -56,7 +56,7 @@ def has_taxonomies(event):
 
 Once you have your streams and tests defined, you can construct your test case.
 
-A test case consists of four parts: the integration it must notify on failure, the test explanation, and a test body, followed by an `expect` call:
+A test case consists of four parts: the integration it must notify on failure, the test explanation, and an optional test body, followed by an `expect` call:
 
 ```python
 @failure >> slack
