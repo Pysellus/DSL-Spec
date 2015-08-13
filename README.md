@@ -69,7 +69,7 @@ A test case consists of four parts: the integration it must notify on failure, t
 - `expect(some_stream)(some_test)` - Here, we say that all elements in `some_stream` must pass `some_test`. Whenever an element doesn't pass, this will get notified to whatever integration we defined in the `@failure` decorator.
 
 
-You can find the implementation for [`@failure`](https://github.com/Pysellus/pysellus/blob/49f1fd529a3ed1dd49d689f7f948fb523ab4f0db/pysellus/integrations.py#L10) and [`expect`](https://github.com/Pysellus/pysellus/blob/49f1fd529a3ed1dd49d689f7f948fb523ab4f0db/pysellus/registrar.py#L14) on the main [repository](https://github.com/Pysellus/pysellus)
+You can find the implementation for [`@failure`](https://github.com/Pysellus/pysellus/blob/49f1fd529a3ed1dd49d689f7f948fb523ab4f0db/pysellus/integrations.py#L10) and [`expect`](https://github.com/Pysellus/pysellus/blob/49f1fd529a3ed1dd49d689f7f948fb523ab4f0db/pysellus/registrar.py#L14) on the main [repository](https://github.com/Pysellus/pysellus).
 
 ### Test Case Execution
 
@@ -103,7 +103,8 @@ events = stream('smartvel')
     # that we want to test
     all_events_in_madrid = events.filter(event_in_madrid)
 
-    # then, we expect that all elements in the test satisfy the given test
+    # Watches the stream, running the test for each element
+    # we expect that all elements in the test to satisfy the given test
     expect(all_events_in_madrid)(has_at_least_two_stars)
 ```
 
@@ -112,17 +113,15 @@ events = stream('smartvel')
 ```python
 events = stream('smartvel')
 
-# we could also decorate this function (the 'setup' function)
-# if it’s useful for something (registering the test name)
-# Fix: change this if you change the syntax
-def all_events_in_Madrid_have_at_least_a_two_star_rating():
+@on_failure('slack')
+def pscheck_all_events_in_Madrid_have_at_least_a_two_star_rating():
+
     # First, filter the stream to get the specific data
     # that we want to test
     all_events_in_madrid = events.filter(event_in_madrid)
 
     # Watches the stream, running the test for each element
-    # Then it will notify the integration
-    # associated with that test
+    # we expect that all elements in the test to satisfy the given test
     expect(all_events_in_madrid)(has_at_least_two_stars)
 ```
 
